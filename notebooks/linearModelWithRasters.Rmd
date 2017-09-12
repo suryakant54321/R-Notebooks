@@ -1,0 +1,67 @@
+---
+title: "Plot regression line for selected rasters"
+output: html_notebook
+Author: "Suryakant Sawant"
+---
+
+An approach to plot regression line for two rasters.  
+
+### Important steps
+
+- Read raster using [R  raster Package]  
+- Convert raster band to matrix  
+- Convert matrix to vector  
+- Fit liear regression equation
+- Plot  
+
+```{r}
+setwd("path\\to\\data\\directory\\")
+library(raster)
+a <- raster::brick("image.tif")
+# get image in matrix
+b <- as.matrix(a$X01_01_14.1)
+c <- as.matrix(a$X01_01_14.2)
+# flatten matrix to vector of dim 1 x (m x n)
+b<-as.vector(b)
+c<-as.vector(c)
+```
+
+### convert vector to dataframe
+
+```{r}
+df <- as.data.frame(b)
+df <- cbind(df, c)
+# remove rows with na values
+df <- na.omit(df)
+```
+
+### Dataframe properties  
+
+```{r}
+dim(df)
+names(df)
+head(df)
+plot(df)
+```
+### Fit liner model
+```{r}  
+lm3 <- lm(b ~ c, df)
+summary(lm3)
+```
+
+### Plot
+```{r}
+plot(c, b)
+abline(lm3, col="red")
+```
+
+
+### References
+- [R  raster Package]
+
+[R  raster Package]:<https://cran.r-project.org/web/packages/raster/raster.pdf>
+
+### Author details
+
+- Author: Suryakant Sawant, PhD
+- Date: 13 Sept. 2017
