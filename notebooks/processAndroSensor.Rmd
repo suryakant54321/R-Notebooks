@@ -1,0 +1,145 @@
+---
+title: "Plotting Andro sensor app data using R"
+output: html_notebook
+---
+
+### Objective/s 
+Requirements CSV files created using [AndroSensor] Android App.  
+1. Install required packages (rgdal, sp)  
+2. Read all csv files from Andro Sensor Android app  
+3. Create ESRI point shapefile from CSV  
+ 
+### 1. Install Packages
+
+```{r}
+install.packages(c("rgdal", "sp"))
+```
+
+### 2. Read all CSV files created by Andro sensor Android app
+
+- Set working directory  
+```{r}
+setwd("processAdroSensor")
+```
+- Folder with csv files
+```{r}
+csvFolder <- "drive-download-20160923T094238Z\\"
+datFiles <- list.files(csvFolder)
+```
+
+- Read each CSV and add to dataframe
+```{r}
+all = data.frame()
+for(i in c(1:length(datFiles))){
+  #print(datFiles[i])
+  f = read.csv(paste(csvFolder, datFiles[i], sep=""), header=T, sep=",")
+  #names(f)
+  colnames(f) <- c( "ACC.X","ACC.Y","ACC.Z","G.X","G.Y","G.Z","L.A.X", "L.A.Y","L.A.Z", "GYRO.X","GYRO.Y", "GYRO.Z","LIGHT","MAG.X","MAG.Y","MAG.Z","OR.Z", "OR.X", "OR.Y", "PROXIMITY", "S.LEVEL","Lat","Lon", "Alt", "Alt.g","Speed", "Accuracy", "ORIENT", "Sat.in.range", "T.since.start","date")
+  all <- rbind(all, f)
+}
+head(all)
+```
+
+- print class of each column 
+
+```{r}
+lapply(1:length(all), function(x)class(all[,x]))
+```
+
+- Select required columns
+```{r}
+dataOut <- all[,c(22,23,24,25,27,29,31)]
+names(dataOut)
+dim(dataOut)
+```
+  
+- Remove NA values  
+```{r}
+dataOut <- na.omit(dataOut)
+dim(dataOut)
+```
+
+- Convert Date from factor to character to Date class
+```{r}
+dataOut$date <- as.Date(as.character(dataOut$date))
+print(head(dataOut$date))
+```
+
+- Print class of each column
+
+```{r}
+lapply(1:dim(dataOut)[2], function(x)class(dataOut[,x]))
+```
+
+- (Optional) Write formatted data to CSV file 
+
+```{r}
+write.csv(dataOut, "allData3.csv", row.names = FALSE)
+```
+
+- Load required R packages
+```{r}
+library('sp')
+library('rgdal')
+```
+
+- Verify class it should be data.frame
+
+```{r}
+class(dataOut); names(dataOut)
+```
+
+- Set lat lon columns from data.frame
+
+```{r}
+coordinates(dataOut)<-~Lon+Lat 
+```
+
+- check class and column names to know sp is associated
+
+```{r}
+class(dataOut)
+names(dataOut)
+summary(dataOut)
+```
+
+- Add projection to shapefile
+
+```{r}
+proj4string(dataOut) <- CRS("+init=epsg:4326")
+```
+
+### 3. Create ESRI point shapefile from CSV 
+- (Optional) Write shapefile
+```{r}
+writeOGR(dataOut, ".", "fieldVisitLoc", driver = "ESRI Shapefile")
+``` 
+
+- Sample spplot 1
+```{r}
+spplot(dataOut, "Alt", do.log = FALSE,
+       key.space=list(x=0.2,y=0.9,corner=c(0,1)),
+       scales=list(draw=T))
+```
+
+- Sample spplot 2
+
+```{r}
+spplot(dataOut, "Alt.g", do.log = FALSE,
+       key.space=list(x=0.2,y=0.9,corner=c(0,1)),
+       scales=list(draw=T))
+```
+
+### References
+- [R  SP Package]
+- [R  rgdal Package]
+- [AndroSensor]
+
+[R  SP Package]:<https://cran.r-project.org/web/packages/sp/index.html>
+[R  rgdal Package]:<https://cran.r-project.org/web/packages/rgdal/index.html>
+[AndroSensor]:<https://play.google.com/store/apps/details?id=com.fivasim.androsensor&hl=en>
+
+### Author details
+
+- Author: Suryakant Sawant, PhD
+- Date: 24 Sept. 2016
